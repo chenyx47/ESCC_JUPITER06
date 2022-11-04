@@ -1068,7 +1068,9 @@ pdf("./Figure/Figure3/HLAB_Supertype_RaceFreq(Supplementary).pdf",
 print(Plot)
 dev.off()
 
+#  ---------------------------------------------------------------
 #Immunogenicity Feature-based classification----
+#  ---------------------------------------------------------------
 
 dir.create("./Figure/ImmunogenicFeature/")
 ESCC_Jupiter06_Immunogenicity$HLA_B_Status[
@@ -1466,20 +1468,39 @@ pdf("./Figure/Figure4/Mutation_Event_Screening_PFS(Figure4a).pdf",
 print(Plot)
 dev.off()
 
+ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$Status[
+  round(ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.Pval,digits = 3)<=0.1&
+    ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.k>0
+]<-"Sig-Risk"
+ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$Status[
+  round(ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.Pval,digits = 3)<=0.1&
+    ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.k<0
+]<-"Sig-Protective"
+ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$Status[
+  round(ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.Pval,digits = 3)>0.1&
+    ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.k>0
+]<-"NonSig-Risk"
+ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$Status[
+  round(ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.Pval,digits = 3)>0.1&
+    ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$OS.Inter.k<0
+]<-"NonSig-Protective"
+
 Plot<-
   ggplot(ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub,
          aes(y=(-log10(OS.Inter.Pval)),x=OS.Inter.k,
              color=Status))+
   geom_point(aes(size=Pc))+
   scale_color_manual(values=c("#FF8484","#9191FF",
-                              "#203864","#840000"))+
+                              "#840000","#203864"))+
   theme_classic()+
   theme(axis.text = element_text(size=15,color="black"),
         axis.title = element_text(size=18),
         legend.position = "top",
         legend.title = element_blank())+
-  geom_text_repel(data=ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub[ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$PFS.Inter.Pval<0.1,],
-                  label=ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub[ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$PFS.Inter.Pval<0.1,
+  geom_text_repel(data=ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub[ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$Status%in%c("Sig-Protective",
+                                                                                                                                       "Sig-Risk"),],
+                  label=ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub[ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub$Status%in%c("Sig-Protective",
+                                                                                                                                        "Sig-Risk"),
                                                                           1],
                   size=5)+
   geom_hline(yintercept = 1,
@@ -1490,6 +1511,10 @@ pdf("./Figure/Figure4/Mutation_Event_Screening_OS(Figure4a).pdf",
     width = 6,height = 6)
 print(Plot)
 dev.off()
+
+write.csv(ESCC_Jupiter06_Mutation_ScreeningResult_DriverSub[c(1:14)],
+          "./Figure/Figure4/ESCC_Jupiter06_DriverGeneMut_ScreeningResult.csv",
+          row.names = FALSE)
 
 ##Figure4b and Supplementary----
 
@@ -1784,7 +1809,7 @@ ESCC_JS001_GeneLevelCNV_Sequenza_ScreeningResult<-
   cbind(.[1],
         round(.[-1],digits = 3))
 
-write.csv(ESCC_JS001_GeneLevelCNV_Sequenza_ScreeningResult,
+write.csv(ESCC_JS001_GeneLevelCNV_Sequenza_ScreeningResult[c(1:14)],
           "./Figure/Figure4/ESCC_Jupiter06_GeneLevelCNV_ScreeningResult.csv",
           row.names = FALSE)
 
@@ -1818,20 +1843,24 @@ ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult<-
   rbind(ESCC_JS001_LesionLevelCNV_SequenzaAmp_ScreeningResult,
         ESCC_JS001_LesionLevelCNV_SequenzaDel_ScreeningResult)
 
+write.csv(ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult[c(1:14)],
+          "./Figure/Figure4/ESCC_Jupiter06_LesionLevelCNA_ScreeningResult.csv",
+          row.names = FALSE)
+
 ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$Status[
-  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval<0.1&
+  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval<=0.1&
     ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.k>0
 ]<-"Sig-Risk"
 ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$Status[
-  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval<0.1&
+  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval<=0.1&
     ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.k<0
 ]<-"Sig-Protective"
 ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$Status[
-  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval>=0.1&
+  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval>0.1&
     ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.k>0
 ]<-"NonSig-Risk"
 ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$Status[
-  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval>=0.1&
+  ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.Pval>0.1&
     ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$PFS.Inter.k<0
 ]<-"NonSig-Protective"
 
@@ -1889,6 +1918,12 @@ Plot<-
         legend.title = element_blank())+
   geom_hline(yintercept = 1,
              linetype="dashed")+
+  geom_text_repel(data=ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult[ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$Status%in%c("Sig-Protective",
+                                                                                                                                       "Sig-Risk"),],
+                  label=ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult[ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult$Status%in%c("Sig-Protective",
+                                                                                                                                        "Sig-Risk"),
+                                                                          1],
+                  size=5)+
   ylab("-Log10(OS-Inter-Pvalue)")+
   xlab("OS-InteractionK");Plot
 
