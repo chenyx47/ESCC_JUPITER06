@@ -17,6 +17,7 @@
   library(ggsci) #2.9
   library(psych) #2.0.7
   library(ggcorrplot) #0.1.3
+  library(gghalves) #0.1.3
   source("./Function.R")
 }
 
@@ -1066,6 +1067,155 @@ Plot<-
 pdf("./Figure/Figure3/HLAB_Supertype_RaceFreq(Supplementary).pdf",
     width = 8,height = 6)
 print(Plot)
+dev.off()
+
+###B62-Immune from TCGA
+
+# TCGA_HLAgenotype<-
+#   openxlsx::read.xlsx("TCGA_HLA_benchmark_20200810.xlsx")
+# HLAB_Supertype<-
+#   read.delim("HLABsupertype_2008_reformat.txt")
+# 
+# TCGA_HLAgenotype_Split<-
+#   limma::strsplit2(TCGA_HLAgenotype$HLA_ClassI,"\\|")
+# TCGA_HLAgenotype_Split<-
+#   cbind(TCGA_HLAgenotype,
+#         TCGA_HLAgenotype_Split)
+# TCGA_HLAgenotype_Split[-1]<-
+#   apply(TCGA_HLAgenotype_Split[-1],2,function(x){gsub("\\:","",x)})
+# TCGA_HLAgenotype_Split$Supertype<-
+#   apply(TCGA_HLAgenotype_Split[c(20:28)],1,
+#         function(x){y=ifelse(any(x%in%HLAB_Supertype$Allele[HLAB_Supertype$Supertype=="B62"]),
+#                              ifelse(any(x=="B*1501"),"B62-B1501","B62-nonB1501"),
+#                              "Non-B62")})
+# 
+# TCGA_ImmuneLandscape_Score<-
+#   read.delim("/data2/Public/TCGAxena/TCGA_Immune/TCGA_ImmuneLandscape_Score.txt")
+# TCGA_ImmuneLandscape_Score<-
+#   TCGA_ImmuneLandscape_Score[c(1,2,5,13,29,55)]
+# TCGA_ImmuneLandscape_Score$T.Cells.CD8<-
+#   TCGA_ImmuneLandscape_Score$T.Cells.CD8*
+#   TCGA_ImmuneLandscape_Score$Leukocyte.Fraction
+# TCGA_HLAgenotype_Split<-
+#   merge(TCGA_HLAgenotype_Split,
+#         TCGA_ImmuneLandscape_Score,
+#         by.x="Sample_Barcode",
+#         by.y="TCGA.Participant.Barcode")
+# saveRDS(TCGA_HLAgenotype_Split,
+#         "TCGA_HLAgenotype_Split_Immune.RDS")
+
+TCGA_HLAgenotype_Split<-
+  readRDS("SourceData/B62Freq/TCGA_HLAgenotype_Split_Immune.RDS")
+
+p1<-ggplot(subset(TCGA_HLAgenotype_Split,
+                  Supertype%in%c("Non-B62","B62-nonB1501")),
+           aes(x=1,y = IFN.gamma.Response,fill=Supertype))+
+  geom_split_violin(trim = T,colour=NA)+
+  geom_boxplot(color="white",width=0.25)+
+  scale_fill_manual(values = c("#D48852","#3D5057"))+
+  theme_classic()+
+  # mytheme+
+  ylab("IFN-gamma Response")+xlab("Type")+
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 15),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank());p1
+p2<-ggplot(subset(TCGA_HLAgenotype_Split,
+                  Supertype%in%c("B62-B1501","B62-nonB1501"))%>%
+             mutate(Supertype=factor(Supertype,levels = c("B62-nonB1501","B62-B1501"))),
+           aes(x=1,y = IFN.gamma.Response,fill=Supertype))+
+  geom_split_violin(trim = T,colour=NA)+
+  geom_boxplot(color="white",width=0.25)+
+  scale_fill_manual(values = c("#D48852","#4E8F7F"))+
+  theme_classic()+
+  # mytheme+
+  ylab("IFN-gamma Response")+xlab("Type")+
+  theme(axis.text = element_text(size = 12,color = "black"),
+        axis.title = element_text(size = 15),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank());p2
+Plot_IFN<-p1+p2
+pdf("Figure/Figure3/B62_IFNg_TCGA.pdf",
+    width = 6,height = 6)
+print(Plot_IFN)
+dev.off()
+
+p1<-ggplot(subset(TCGA_HLAgenotype_Split,
+                  Supertype%in%c("Non-B62","B62-nonB1501")),
+           aes(x=1,y = T.Cells.CD8,fill=Supertype))+
+  geom_split_violin(trim = T,colour=NA)+
+  geom_boxplot(color="white",width=0.25)+
+  scale_fill_manual(values = c("#D48852","#3D5057"))+
+  theme_classic()+
+  # mytheme+
+  ylab("T.Cells.CD8")+xlab("Type")+
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 15),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank());p1
+p2<-ggplot(subset(TCGA_HLAgenotype_Split,
+                  Supertype%in%c("B62-B1501","B62-nonB1501"))%>%
+             mutate(Supertype=factor(Supertype,levels = c("B62-nonB1501","B62-B1501"))),
+           aes(x=1,y = T.Cells.CD8,fill=Supertype))+
+  geom_split_violin(trim = T,colour=NA)+
+  geom_boxplot(color="white",width=0.25)+
+  scale_fill_manual(values = c("#D48852","#4E8F7F"))+
+  theme_classic()+
+  # mytheme+
+  ylab("T.Cells.CD8")+xlab("Type")+
+  theme(axis.text = element_text(size = 12,color = "black"),
+        axis.title = element_text(size = 15),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank());p2
+Plot_CD8<-p1+p2
+pdf("Figure/Figure3/B62_CD8_TCGA.pdf",
+    width = 6,height = 6)
+print(Plot_CD8)
+dev.off()
+
+p1<-ggplot(subset(TCGA_HLAgenotype_Split,
+                  Supertype%in%c("Non-B62","B62-nonB1501")),
+           aes(x=1,y = Leukocyte.Fraction,fill=Supertype))+
+  geom_split_violin(trim = T,colour=NA)+
+  geom_boxplot(color="white",width=0.25)+
+  scale_fill_manual(values = c("#D48852","#3D5057"))+
+  theme_classic()+
+  # mytheme+
+  ylab("Leukocyte.Fraction")+xlab("Type")+
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 15),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank());p1
+p2<-ggplot(subset(TCGA_HLAgenotype_Split,
+                  Supertype%in%c("B62-B1501","B62-nonB1501"))%>%
+             mutate(Supertype=factor(Supertype,levels = c("B62-nonB1501","B62-B1501"))),
+           aes(x=1,y = Leukocyte.Fraction,fill=Supertype))+
+  geom_split_violin(trim = T,colour=NA)+
+  geom_boxplot(color="white",width=0.25)+
+  scale_fill_manual(values = c("#D48852","#4E8F7F"))+
+  theme_classic()+
+  # mytheme+
+  ylab("Leukocyte.Fraction")+xlab("Type")+
+  theme(axis.text = element_text(size = 12),
+        axis.title = element_text(size = 15),
+        axis.text.x = element_blank(),
+        axis.title.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank());p2
+Plot_Leu<-p1+p2
+pdf("Figure/Figure3/B62_Leukocyte_TCGA.pdf",
+    width = 6,height = 6)
+print(Plot_Leu)
 dev.off()
 
 #  ---------------------------------------------------------------
