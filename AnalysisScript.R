@@ -3,7 +3,8 @@
 ## Author: Yanxing Chen
 ## Version: R 4.0.1
 # ---------------------------------------------------------------
-
+dir.create("/data3/cyx/JS001_ESCC/R_Project/Running-Hub")
+setwd("/data3/cyx/JS001_ESCC/R_Project/Running-Hub")
 {
   library(forestplot) #2.0.1
   library(survival) #3.2-13
@@ -21,19 +22,17 @@
   source("./Function.R")
 }
 
-dir.create("/data3/cyx/JS001_ESCC/R_Project/Running-Hub")
-setwd("/data3/cyx/JS001_ESCC/R_Project/Running-Hub")
 
-ESCC_Jupiter06_Clinical_SupplementaryTable1<-
-  readRDS("/data3/cyx/JS001_ESCC/R_Project/RunningHub/SourceData/ESCC_Jupiter06_Clinical_SupplementaryTable1.RDS")
+ESCC_Jupiter06_Clinical_SupplementaryTable2<-
+  readRDS("./SourceData/ESCC_Jupiter06_Clinical_SupplementaryTable2.RDS")
 
 # ---------------------------------------------------------------
-## Scripts to Reproduce the Figure 2----
+## Scripts to Reproduce the Association between TMBs and the benefits----
 # ---------------------------------------------------------------
 
 dir.create("./Figure/Figure2",recursive = TRUE)
 ESCC_Jupiter06_Immunogenicity<-
-  ESCC_Jupiter06_Clinical_SupplementaryTable1[
+  ESCC_Jupiter06_Clinical_SupplementaryTable2[
     c(1:21)
   ]
 
@@ -342,7 +341,7 @@ ggsave(Plot_Response,
        width = 6,height = 5)
 
 # ---------------------------------------------------------------
-## Scripts to Reproduce the Figure 3----
+## Scripts to Reproduce the Association between HLA genotype and the benefits----
 # ---------------------------------------------------------------
 
 dir.create("./Figure/Figure3",recursive = TRUE)
@@ -1436,6 +1435,48 @@ pdf("./Figure/ImmunogenicFeature/CI_Score_Curve_Binary.pdf",
 print(TotalPlot)
 dev.off()
 
+##Interaction Comparison with ccTMB----
+
+Kvalue_Result_ccTMB<-
+  Interation_Screening_SV_BV_ForKvalue(ESCC_Jupiter06_Immunogenicity,
+                                       Set_Column=which(names(ESCC_Jupiter06_Immunogenicity)%in%c("ccTMBstatus")),
+                                       Set_Comparison_A="High",
+                                       Set_Comparison_B=c("Low"))
+
+
+Kvalue_Result_ImmunogenicFeature<-
+  Interation_Screening_SV_BV_ForKvalue(ESCC_Jupiter06_Immunogenicity,
+                                       Set_Column=which(names(ESCC_Jupiter06_Immunogenicity)%in%c("RiskCombine_Status")),
+                                       Set_Comparison_A="immune feature-favorable",
+                                       Set_Comparison_B=c("immune feature-unfavorable"))
+
+Interaction_Pvalue_ForImmunogenicFeature<-
+  rbind(Kvalue_Result_ccTMB,
+        Kvalue_Result_ImmunogenicFeature)
+
+Interaction_Pvalue_ForImmunogenicFeature<-
+  Interaction_Pvalue_ForImmunogenicFeature[c("Items","OS.Inter.Pval","PFS.Inter.Pval")]%>%
+  reshape2::melt()
+Interaction_Pvalue_ForImmunogenicFeature$Items<-
+  c("ccTMB","Immunogenic Features",
+    "ccTMB","Immunogenic Features")
+
+Plot<-
+  ggplot(Interaction_Pvalue_ForImmunogenicFeature,
+         aes(x=variable,
+             y=-log10(value),
+             fill=Items))+
+  geom_bar(stat = "identity",position = "dodge")+
+  theme(legend.position = "top",
+        legend.title = element_blank(),
+        axis.text = element_text(size=12,color="black"),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=15,color="black"),
+        legend.text = element_text(size=12))+
+  scale_fill_jama()
+ggsave("./Figure/ImmunogenicFeature/Interaction_Pvalue.pdf",
+       plot = Plot,width = 4,height = 5)
+
 ##Immunogenicity Feature-based classification and 12-month PFS rate----
 
 SurvFit1<-
@@ -1552,7 +1593,7 @@ ggsave(plot=Plot,
 
 
 # ---------------------------------------------------------------
-## Scripts to Reproduce the Figure 4----
+## Scripts to Reproduce the Association between Oncogenic Events and the benefits----
 # ---------------------------------------------------------------
 
 dir.create("./Figure/Figure4")
@@ -1560,7 +1601,7 @@ dir.create("./Figure/Figure4")
 ##Figure4a----
 
 ESCC_Jupiter06_Mutation<-
-  ESCC_Jupiter06_Clinical_SupplementaryTable1[
+  ESCC_Jupiter06_Clinical_SupplementaryTable2[
     c(1:7,22:56)
   ]
 
@@ -1920,79 +1961,41 @@ dev.off()
 
 ##Figure4c----
 
-###Gene Level CNV----
-
-ESCC_Jupiter06_geneCNV<-
-  readRDS("./SourceData/Alteration/ESCC_JS001_GeneLevelCNV_Matrix.RDS")
-ESCC_Jupiter06_geneCNV_Amp<-
-  cbind(ESCC_Jupiter06_geneCNV[1],
-        ESCC_Jupiter06_geneCNV[grep("Amp",names(ESCC_Jupiter06_geneCNV))])%>%
-  merge(ESCC_Jupiter06_Clinical,
-        .,
-        by="SUBJID")
-ESCC_JS001_GeneLevelCNV_SequenzaAmp_ScreeningResult<-
-  Interation_Screening_SV_BV(
-    ESCC_Jupiter06_geneCNV_Amp,
-    Set_Column=c(8:ncol(ESCC_Jupiter06_geneCNV_Amp)),
-    Set_Comparison_A=c("High-level amplification"),
-    Set_Comparison_B=c("No amplification")
-  )
-
-ESCC_Jupiter06_geneCNV_Del<-
-  cbind(ESCC_Jupiter06_geneCNV[1],
-        ESCC_Jupiter06_geneCNV[grep("Del",names(ESCC_Jupiter06_geneCNV))])%>%
-  merge(ESCC_Jupiter06_Clinical,
-        .,
-        by="SUBJID")
-ESCC_JS001_GeneLevelCNV_SequenzaDel_ScreeningResult<-
-  Interation_Screening_SV_BV(
-    ESCC_Jupiter06_geneCNV_Del,
-    Set_Column=c(8:ncol(ESCC_Jupiter06_geneCNV_Del)),
-    Set_Comparison_A=c("Deep deletion"),
-    Set_Comparison_B=c("No deletion")
-  )
-
-ESCC_JS001_GeneLevelCNV_Sequenza_ScreeningResult<-
-  rbind(ESCC_JS001_GeneLevelCNV_SequenzaAmp_ScreeningResult,
-        ESCC_JS001_GeneLevelCNV_SequenzaDel_ScreeningResult)%>%
-  subset(.,Pc>=0.05)%>%
-  cbind(.[1],
-        round(.[-1],digits = 3))
-
-write.csv(ESCC_JS001_GeneLevelCNV_Sequenza_ScreeningResult[c(1:14)],
-          "./Figure/Figure4/ESCC_Jupiter06_GeneLevelCNV_ScreeningResult.csv",
-          row.names = FALSE)
 
 ###Lesion Level----
 
-ESCC_Jupiter06_CNV_Amp<-
-  ESCC_Jupiter06_Clinical_SupplementaryTable1[
-    c(1:7,grep("Amp",names(ESCC_Jupiter06_Clinical_SupplementaryTable1)))
-  ]
+# ESCC_Jupiter06_CNV_Amp<-
+#   ESCC_Jupiter06_Clinical_SupplementaryTable2[
+#     c(1:7,grep("Amp",names(ESCC_Jupiter06_Clinical_SupplementaryTable2)))
+#   ]
+# 
+# ESCC_JS001_LesionLevelCNV_SequenzaAmp_ScreeningResult<-
+#   Interation_Screening_SV_BV(
+#     ESCC_Jupiter06_CNV_Amp,
+#     Set_Column=c(8:ncol(ESCC_Jupiter06_CNV_Amp)),
+#     Set_Comparison_A=c("High-level amplification"),
+#     Set_Comparison_B=c("No amplification")
+#   )
+# 
+# ESCC_Jupiter06_CNV_Del<-
+#   ESCC_Jupiter06_Clinical_SupplementaryTable2[
+#     c(1:7,grep("Del",names(ESCC_Jupiter06_Clinical_SupplementaryTable2)))
+#   ]
+# ESCC_JS001_LesionLevelCNV_SequenzaDel_ScreeningResult<-
+#   Interation_Screening_SV_BV(
+#     ESCC_Jupiter06_CNV_Del,
+#     Set_Column=c(8:ncol(ESCC_Jupiter06_CNV_Del)),
+#     Set_Comparison_A=c("Deep deletion"),
+#     Set_Comparison_B=c("No deletion")
+#   )
+# ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult<-
+#   rbind(ESCC_JS001_LesionLevelCNV_SequenzaAmp_ScreeningResult,
+#         ESCC_JS001_LesionLevelCNV_SequenzaDel_ScreeningResult)
+# saveRDS(ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult,
+#         "./SourceData/Alteration/ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult.RDS")
 
-ESCC_JS001_LesionLevelCNV_SequenzaAmp_ScreeningResult<-
-  Interation_Screening_SV_BV(
-    ESCC_Jupiter06_CNV_Amp,
-    Set_Column=c(8:ncol(ESCC_Jupiter06_CNV_Amp)),
-    Set_Comparison_A=c("High-level amplification"),
-    Set_Comparison_B=c("No amplification")
-  )
-
-ESCC_Jupiter06_CNV_Del<-
-  ESCC_Jupiter06_Clinical_SupplementaryTable1[
-    c(1:7,grep("Del",names(ESCC_Jupiter06_Clinical_SupplementaryTable1)))
-  ]
-ESCC_JS001_LesionLevelCNV_SequenzaDel_ScreeningResult<-
-  Interation_Screening_SV_BV(
-    ESCC_Jupiter06_CNV_Del,
-    Set_Column=c(8:ncol(ESCC_Jupiter06_CNV_Del)),
-    Set_Comparison_A=c("Deep deletion"),
-    Set_Comparison_B=c("No deletion")
-  )
 ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult<-
-  rbind(ESCC_JS001_LesionLevelCNV_SequenzaAmp_ScreeningResult,
-        ESCC_JS001_LesionLevelCNV_SequenzaDel_ScreeningResult)
-
+  readRDS("./SourceData/Alteration/ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult.RDS")
 write.csv(ESCC_JS001_LesionLevelCNV_Sequenza_ScreeningResult[c(1:14)],
           "./Figure/Figure4/ESCC_Jupiter06_LesionLevelCNA_ScreeningResult.csv",
           row.names = FALSE)
@@ -2731,7 +2734,7 @@ ggsave(plot=Plot,
        width = 6,height = 5)
 
 # ---------------------------------------------------------------
-## Scripts to Reproduce the Figure 5----
+## Scripts to Reproduce the EGIC----
 # ---------------------------------------------------------------
 
 dir.create("./Figure/Figure5/")
